@@ -5,7 +5,7 @@ Created on 24 July 2016
 import copy
 import functools
 
-class Workflow:
+class Workflow(object):
     def __init__(self, task_list=[]):
         self.tasks = task_list
         self.hooks = {}
@@ -35,18 +35,21 @@ class Workflow:
             self.hooks[name] = []
         self.hooks[name].append(function)
 
-    def run_hook(self, name, data_in):
+    def run_hook(self, name, workspace):
+        """
+        Runs all hooks added under the give name
+        """
         if name not in self.hooks:
             raise KeyError('Hook '+name+' not found')
 
-        data = copy.deepcopy(data_in)
+        data = copy.deepcopy(workspace)
         for hook_fn in self.hooks[name]:
             # Hook functions may mutate the data and returns nothing
             hook_fn(data)
         return data
 
-    def __call__(self, data_in={}):
-        data = copy.deepcopy(data_in)
+    def __call__(self, workspace={}):
+        data = copy.deepcopy(workspace)
         for task in self.tasks:
             # Input is full workspace for input type '*'
             if task['inputs'] == '*' or task['inputs']==['*']:
@@ -71,8 +74,5 @@ class Workflow:
                 data.update(zip(task['outputs'],results))
         return data
 
-    def __len__(self):
-        """
-        Returns number of tasks in workflow
-        """
-        return len(self.tasks)
+    def __repr__(self):
+        return '<%s with %d tasks>' % (self.__class__.__name__, len(self.tasks))

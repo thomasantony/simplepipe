@@ -31,8 +31,12 @@ def test_hooks():
     def after_sum_1(data):
         data['c'] = 10
 
+    def after_sum_2(data):
+        data['e'] = 100
+
     p.add_task(lambda x: 2*x, inputs=['c'], outputs=['d'])
 
     p.add_hook('after_sum', after_sum_1)
+    p.add_hook('after_sum', after_sum_2)
     output = p(data_in)
-    assert(output == {'a': 1, 'b': 2, 'c': 10, 'd': 20})
+    assert(output == {'a': 1, 'b': 2, 'c': 10, 'd': 20, 'e': 100})
