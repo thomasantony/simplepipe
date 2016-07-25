@@ -1,19 +1,21 @@
 # Overview
 
-**simplepipe** is a simple functional pipelining library for Python. It was facilitate
-the composition of small tasks, defined as pure functions to accomplish a complex objective.
+**simplepipe** is a simple functional pipelining library for Python. It was built to facilitate
+the composition of small tasks, defined as pure functions, in order to perform a complex operation. It supports single and multi-output tasks (via generator functions). **simplepipe** also allows creation of hooks that can modify the behavior of the workflow after it has been created.
 
 # Installation
 
-The following command will install the package in your python environment.
+The following command will install the package in your python environment from PyPI.
+
+    pip install simplepipe
+
+If you want install from the source code instead, run
 
     python setup.py install
 
-Submission to PyPI is in progress.
-
 # Examples
 **simplepipe** allows you to define a list of functions executed in a sequence that
-uses data in a workspace and returns a new, updated workspace. The original workspace is unaffected.
+uses data in a workspace and returns a new, updated workspace. The original workspace is unaffected. Method calls to `add_task`, `add_hook`, and `add_hook_point` can be chained.
 
 ## Single output functions
 
@@ -27,8 +29,8 @@ uses data in a workspace and returns a new, updated workspace. The original work
 
     wf = simplepipe.Workflow()
     data_in = {'a': 1, 'b': 2}
-    wf.add_task(sum, inputs=['a', 'b'], outputs=['c'])
-    wf.add_task(twice, inputs=['c'], outputs=['d'])
+    wf.add_task(sum, inputs=['a', 'b'], outputs=['c']) \
+      .add_task(twice, inputs=['c'], outputs=['d'])
     output = wf(data_in)
     print(output) # Prints {'a': 1, 'b': 2, 'c': 3, 'd': 6}
 
@@ -51,9 +53,7 @@ separately, one at a time.
     print(output) # Prints {'a': 1, 'b': 2, 'c': 3, 'd': 2}
 
 ## Hooks
-**simplepipe** also supports hooks that allow customization of the workflow.
-Multiple hooks can be added under the same name and the hooked functions will
-executed in the order that they were added wherver the hook event was specified.
+**simplepipe** also supports hooks that allow customization of the workflow after it has been created. Hook points are defined using the `add_hook_point` method. Any number of hook functions can be bound to the hook points in the work flow. Multiple hooks added at the same hook point will be executed in the order that they were added.
 
 
     import simplepipe
@@ -74,9 +74,9 @@ executed in the order that they were added wherver the hook event was specified.
     wf = simplepipe.Workflow()
     data_in = {'a': 1, 'b': 2}
     wf.add_task(sum, inputs=['a', 'b'], outputs=['c'])
-    wf.add_hook_event('after_sum')
+    wf.add_hook_point('after_sum')
     wf.add_task(twice, inputs=['c'], outputs=['d'])
-    wf.add_hook_event('after_twice')
+    wf.add_hook_point('after_twice')
 
     # Hook functions can be inserted any time before the workflow is executed
     wf.add_hook('after_sum', do_after_sum)
