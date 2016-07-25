@@ -3,9 +3,17 @@
 **simplepipe** is a simple functional pipelining library for Python. It was facilitate
 the composition of small tasks, defined as pure functions to accomplish a complex objective.
 
+# Installation
+
+The following command will install the package in your python environment.
+
+    python setup.py install
+
+Submission to PyPI is in progress.
+
 # Examples
 **simplepipe** allows you to define a list of functions executed in a sequence that
-uses data in a workspace and returns an updated workspace.
+uses data in a workspace and returns a new, updated workspace. The original workspace is unaffected.
 
 ## Single output functions
 
@@ -78,4 +86,4 @@ executed in the order that they were added wherver the hook event was specified.
     print(output)
     # {'a': 1, 'b': 2, 'c': 30, 'd': 60, 'e': 31337}
 
-*Note: Hook functions are not pure functions and are supposed to mutate the workspace. They do not return anything.*
+*Note: Hook functions are not pure functions and are supposed to mutate the output workspace. They do not return anything.*
