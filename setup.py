@@ -17,7 +17,9 @@ setup(
     license = "MIT",
     keywords = "pipline, functional, functional programming",
     url = "http://pypi.python.org/pypi/simplepipe",
-    packages=['simplepipe', 'tests'],
+    packages=['simplepipe', 'test_simplepipe'],
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
     long_description=read('README.md'),
     classifiers=[
         "Development Status :: 3 - Alpha",
