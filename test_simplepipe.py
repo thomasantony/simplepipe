@@ -18,20 +18,35 @@ def test_run_task():
     with pytest.raises(TypeError):
         simplepipe.run_task({'task': 'foobar', 'inputs': [], 'outputs': ['a']})
 
-    # Test run task
+    # Test run task with out output
     task_one = {'task': return_one, 'inputs': [], 'outputs': ['a']}
     output = simplepipe.run_task(task_one, {})
-    assert(output == {'a': 1})
-
-    # Number of return value does not match number of outputs
-    task_two = {'task': return_one, 'inputs': [], 'outputs': ['a', 'b']}
-    with pytest.raises(TypeError):
-        simplepipe.run_task(task_two, {})
+    assert output == {'a': 1}
 
     # Fails when task with '*' output doesn't return dict
-    task_three = {'task': return_one, 'inputs': [], 'outputs': ['*']}
+    task_two = {'task': return_one, 'inputs': [], 'outputs': ['*']}
     with pytest.raises(TypeError):
         simplepipe.run_task(task_two, {})
+
+    # Test function with multiple outputs
+    def two_outputs():
+        yield 1
+        yield 2
+
+    # Multiple outputs require generator function
+    task_three = {'task': return_one, 'inputs': [], 'outputs': ['a', 'b']}
+    with pytest.raises(TypeError):
+        simplepipe.run_task(task_three, {})
+
+    # '*' output does not work with generator functions
+    task_four = {'task': two_outputs, 'inputs': [], 'outputs': ['*']}
+    with pytest.raises(TypeError):
+        simplepipe.run_task(task_four, {})
+
+    # Task with two outputs
+    task_five = {'task': two_outputs, 'inputs': [], 'outputs': ['a', 'b']}
+    output = simplepipe.run_task(task_five, {})
+    assert output == {'a': 1, 'b': 2}
 
 
 def test_workflow(sum_func):

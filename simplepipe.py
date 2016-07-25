@@ -21,13 +21,11 @@ def run_task(task, workspace):
     """
     data = copy.copy(workspace)
 
-
     # Input validation
     if not isinstance(task['inputs'], list):
         task['inputs'] = [task['inputs']]
     if not isinstance(task['outputs'], list):
         task['outputs'] = [task['outputs']]
-
 
     if len(task['inputs']) > 0 and task['inputs'][0] == '*':
         # Send full workspace for input type '*'
@@ -39,10 +37,9 @@ def run_task(task, workspace):
         raise TypeError('Task function must be a callable object')
 
     if len(task['outputs']) > 1 \
-        and not inspect.isgeneratorfunction(task['task']):
+       and not inspect.isgeneratorfunction(task['task']):
         raise TypeError('Multiple outputs are only supported with \
                         generator functions')
-
 
     if inspect.isgeneratorfunction(task['task']):
         if task['outputs'][0] == '*':
@@ -62,11 +59,6 @@ def run_task(task, workspace):
         data.update(results)
 
     return data
-
-    # if len(results) != len(task['outputs']):
-    #     raise RuntimeError('Number of return values does \
-    #                         not match number of outputs')
-
 
 
 class Workflow(object):
