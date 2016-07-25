@@ -16,7 +16,7 @@ setup(
     description = ("A simple functional pipelining library for Python."),
     license = "MIT",
     keywords = "pipline, functional, functional programming",
-    url = "http://packages.python.org/simplepipe",
+    url = "http://pypi.python.org/pypi/simplepipe",
     packages=['simplepipe', 'tests'],
     long_description=read('README.md'),
     classifiers=[
