@@ -5,12 +5,58 @@ Created on 24 July 2016
 import copy
 import functools
 
+
+def run_task(task, workspace):
+    """
+    Runs the task and updates the workspace with results
+
+    task : dict describing task:
+
+    Examples:
+    {'task': task_func, 'inputs': ['a','b'], 'outputs': 'c'}
+    {'task': task_func, 'inputs': '*', 'outputs': '*'}
+
+    Returns a new workspace with results
+    """
+    data = copy.copy(workspace)
+    # Input is full workspace for input type '*'
+    if task['inputs'] == '*' or task['inputs']==['*']:
+        inputs = [data]
+    else:
+        inputs = [data[key] for key in task['inputs']]
+
+    if not callable(task['task']):
+        raise ValueError('Task function must be a callable object')
+
+    results = task['task'](*inputs)
+
+    if len(task['outputs']) == 1:
+        results = [results]
+
+    if len(results) != len(task['outputs']):
+        raise RuntimeError('Number of return values does not match number of outputs')
+
+    if task['outputs'] == '*' or task['outputs'] == ['*']:
+        try:
+            data.update(results[0])
+        except TypeError as e:
+            raise TypeError('Result should be a dict for output type *')
+    else:
+        data.update(zip(task['outputs'],results))
+
+    return data
+
 class Workflow(object):
     def __init__(self, task_list=[]):
         self.tasks = task_list
         self.hooks = {}
 
     def add_task(self, task, inputs=[], outputs=[]):
+        """
+        Adds a task to the workflow
+
+        Returns self to facilitate chaining method calls
+        """
         self.tasks.append({'task':task, 'inputs':inputs, 'outputs':outputs})
         return self
 
@@ -68,43 +114,3 @@ class Workflow(object):
 
     def __repr__(self):
         return '<%s with %d tasks>' % (self.__class__.__name__, len(self.tasks))
-
-def run_task(task, workspace):
-    """
-    Runs the task and updates the workspace with results
-
-    task : dict describing task:
-
-    Examples:
-    {'task': task_func, 'inputs': ['a','b'], 'outputs': 'c'}
-    {'task': task_func, 'inputs': '*', 'outputs': '*'}
-
-    Returns a new workspace with results
-    """
-    data = copy.copy(workspace)
-    # Input is full workspace for input type '*'
-    if task['inputs'] == '*' or task['inputs']==['*']:
-        inputs = [data]
-    else:
-        inputs = [data[key] for key in task['inputs']]
-
-    if not callable(task['task']):
-        raise ValueError('Task function must be a callable object')
-
-    results = task['task'](*inputs)
-
-    if len(task['outputs']) == 1:
-        results = [results]
-
-    if len(results) != len(task['outputs']):
-        raise RuntimeError('Number of return values does not match number of outputs')
-
-    if task['outputs'] == '*' or task['outputs'] == ['*']:
-        try:
-            data.update(results[0])
-        except TypeError as e:
-            raise TypeError('Result should be a dict for output type *')
-    else:
-        data.update(zip(task['outputs'],results))
-
-    return data
