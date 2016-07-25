@@ -15,7 +15,7 @@ setup(
     author_email = "tantony.purdue@gmail.com",
     description = ("A simple functional pipelining library for Python."),
     license = "MIT",
-    keywords = "pipline, functional, functional programming",
+    keywords = "pipeline, functional, functional programming",
     url = "https://github.com/thomasantony/simplepipe",
     py_modules=['simplepipe'],
     setup_requires=['pytest-runner'],
