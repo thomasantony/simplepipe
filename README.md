@@ -1,10 +1,14 @@
 # simplepipe
+
 **simplepipe** is a simple functional pipelining library for Python. I wrote this to facilitate
 writing of neat code to perform complex tasks. It could be that I have reinvented
 the wheel somehow, but I couldn't find any library that did what I wanted.
 
 **simplepipe** allows you to define a list of functions executed in a sequence that
 uses data in a workspace and returns an updated workspace.
+
+Functions returning multiple values must use the `yield` keyword to return them
+separately, one at a time.
 
 Example:
 

@@ -3,6 +3,7 @@ Created on 24 July 2016
 @author: Thomas Antony
 """
 import copy
+import inspect
 import functools
 
 
@@ -19,33 +20,53 @@ def run_task(task, workspace):
     Returns a new workspace with results
     """
     data = copy.copy(workspace)
-    # Input is full workspace for input type '*'
-    if task['inputs'] == '*' or task['inputs'] == ['*']:
+
+
+    # Input validation
+    if not isinstance(task['inputs'], list):
+        task['inputs'] = [task['inputs']]
+    if not isinstance(task['outputs'], list):
+        task['outputs'] = [task['outputs']]
+
+
+    if len(task['inputs']) > 0 and task['inputs'][0] == '*':
+        # Send full workspace for input type '*'
         inputs = [data]
     else:
         inputs = [data[key] for key in task['inputs']]
 
     if not callable(task['task']):
-        raise ValueError('Task function must be a callable object')
+        raise TypeError('Task function must be a callable object')
 
-    results = task['task'](*inputs)
+    if len(task['outputs']) > 1 \
+        and not inspect.isgeneratorfunction(task['task']):
+        raise TypeError('Multiple outputs are only supported with \
+                        generator functions')
 
-    if len(task['outputs']) == 1:
-        results = [results]
 
-    if len(results) != len(task['outputs']):
-        raise RuntimeError('Number of return values does \
-                            not match number of outputs')
+    if inspect.isgeneratorfunction(task['task']):
+        if task['outputs'][0] == '*':
+            raise TypeError('Generator functions cannot be used for tasks with \
+                             output specification *')
 
-    if task['outputs'] == '*' or task['outputs'] == ['*']:
-        try:
-            data.update(results[0])
-        except TypeError as e:
-            raise TypeError('Result should be a dict for output type *')
+        # Multiple output task
+        # Assuming number of outputs are equal to number of return values
+        data.update(zip(task['outputs'], task['task'](*inputs)))
     else:
-        data.update(zip(task['outputs'], results))
+        # Single output task
+        results = task['task'](*inputs)
+        if task['outputs'][0] != '*':
+            results = {task['outputs'][0]: results}
+        elif not isinstance(results, dict):
+            raise TypeError('Result should be a dict for output type *')
+        data.update(results)
 
     return data
+
+    # if len(results) != len(task['outputs']):
+    #     raise RuntimeError('Number of return values does \
+    #                         not match number of outputs')
+
 
 
 class Workflow(object):

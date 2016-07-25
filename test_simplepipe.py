@@ -14,10 +14,24 @@ def test_run_task():
     def return_one():
         return 1
 
+    # When task is not callable
+    with pytest.raises(TypeError):
+        simplepipe.run_task({'task': 'foobar', 'inputs': [], 'outputs': ['a']})
+
     # Test run task
     task_one = {'task': return_one, 'inputs': [], 'outputs': ['a']}
     output = simplepipe.run_task(task_one, {})
     assert(output == {'a': 1})
+
+    # Number of return value does not match number of outputs
+    task_two = {'task': return_one, 'inputs': [], 'outputs': ['a', 'b']}
+    with pytest.raises(TypeError):
+        simplepipe.run_task(task_two, {})
+
+    # Fails when task with '*' output doesn't return dict
+    task_three = {'task': return_one, 'inputs': [], 'outputs': ['*']}
+    with pytest.raises(TypeError):
+        simplepipe.run_task(task_two, {})
 
 
 def test_workflow(sum_func):
