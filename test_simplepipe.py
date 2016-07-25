@@ -71,7 +71,7 @@ def test_hooks(sum_func):
     data_in = {'a': 1, 'b': 2}
     data_out = {'a': 1, 'b': 2, 'c': 3}
     p.add_task(sum_func, inputs=['a', 'b'], outputs=['c'])
-    p.add_hook_event('after_sum')
+    p.add_hook_point('after_sum')
     p.add_task(lambda c: 2*c, inputs=['c'], outputs=['d'])
 
     p.add_hook('after_sum', after_sum_1)

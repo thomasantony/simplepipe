@@ -75,7 +75,7 @@ class Workflow(object):
         self.tasks.append({'task': task, 'inputs': inputs, 'outputs': outputs})
         return self
 
-    def add_hook_event(self, name):
+    def add_hook_point(self, name):
         """
         Creates a point in the workflow where hook functions can be added.
 
