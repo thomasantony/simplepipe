@@ -79,7 +79,7 @@ class Workflow(object):
         """
         Creates a point in the workflow where hook functions can be added.
 
-        Implemented as a special type of task that takes full workspace as
+        Implemented as a special type of task that takes full workspace as its
         input and returns a modified workspace
         """
         self.tasks.append({'task': functools.partial(self.run_hook, name),
