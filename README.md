@@ -48,7 +48,7 @@ separately, one at a time.
 
     wf = simplepipe.Workflow()
     data_in = {'a': 1, 'b': 2}
-    wf.add_task(sum_and_product, inputs=['a', 'b'], outputs=['c','d'])
+    wf.add_task(sum_and_product, inputs=['a', 'b'], outputs=['c', 'd'])
     output = wf(data_in)
     print(output) # Prints {'a': 1, 'b': 2, 'c': 3, 'd': 2}
 
