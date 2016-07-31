@@ -6,6 +6,7 @@ import copy
 import inspect
 import functools
 
+__version__ = '0.0.2'
 
 def validate_task(original_task):
     """

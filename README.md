@@ -2,6 +2,8 @@
 
 **simplepipe** is a simple composable, functional pipelining library for Python. It was built to facilitate the composition of small tasks, defined as pure functions, in order to perform a complex operation. It supports single and multi-output tasks (via generator functions). **simplepipe** also allows creation of hooks that can modify the behavior of the workflow after it has been created.
 
+[![Build Status](https://travis-ci.org/thomasantony/simplepipe.svg?branch=master)](https://travis-ci.org/thomasantony/simplepipe)
+[![PyPI version](https://badge.fury.io/py/simplepipe.svg)](https://badge.fury.io/py/simplepipe)
 # Installation
 
 The following command will install the package in your python environment from PyPI.
