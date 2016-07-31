@@ -7,6 +7,48 @@ import inspect
 import functools
 
 
+def validate_task(original_task):
+    """
+    Validates task and adds default values for missing options
+
+    Returns new task with updated options
+    """
+    task = copy.copy(original_task)
+    # Default values for inputs and outputs
+    if 'inputs' not in task or task['inputs'] is None:
+        task['inputs'] = ['*']
+
+    # Outputs list cannot be empty
+    if ('outputs' not in task
+        or task['outputs'] is None
+        or len(task['outputs']) == 0):
+        task['outputs'] = ['*']
+
+    # Convert to tuples (even for single values)
+    if not hasattr(task['inputs'], '__iter__'):
+        task['inputs'] = (task['inputs'],)
+    else:
+        task['inputs'] = tuple(task['inputs'])
+
+    if not hasattr(task['outputs'], '__iter__'):
+        task['outputs'] = (task['outputs'],)
+    else:
+        task['outputs'] = tuple(task['outputs'])
+
+    if not callable(task['task']):
+        raise TypeError('Task function must be a callable object')
+
+    if (len(task['outputs']) > 1
+       and not inspect.isgeneratorfunction(task['task'])):
+        raise TypeError('Multiple outputs are only supported with \
+                        generator functions')
+
+    if inspect.isgeneratorfunction(task['task']):
+        if task['outputs'][0] == '*':
+            raise TypeError('Generator functions cannot be used for tasks with \
+                             output specification "*"')
+    return task
+
 def run_task(task, workspace):
     """
     Runs the task and updates the workspace with results.
@@ -21,36 +63,26 @@ def run_task(task, workspace):
     """
     data = copy.copy(workspace)
 
-    # Input validation
-    if not isinstance(task['inputs'], list):
-        task['inputs'] = [task['inputs']]
-    if not isinstance(task['outputs'], list):
-        task['outputs'] = [task['outputs']]
+    task = validate_task(task)
 
+    # Prepare input to task
     if len(task['inputs']) > 0 and task['inputs'][0] == '*':
         # Send full workspace for input type '*'
         inputs = [data]
     else:
         inputs = [data[key] for key in task['inputs']]
 
-    if not callable(task['task']):
-        raise TypeError('Task function must be a callable object')
-
-    if len(task['outputs']) > 1 \
-       and not inspect.isgeneratorfunction(task['task']):
-        raise TypeError('Multiple outputs are only supported with \
-                        generator functions')
-
     if inspect.isgeneratorfunction(task['task']):
-        if task['outputs'][0] == '*':
-            raise TypeError('Generator functions cannot be used for tasks with \
-                             output specification *')
-
         # Multiple output task
         # Assuming number of outputs are equal to number of return values
         data.update(zip(task['outputs'], task['task'](*inputs)))
     else:
         # Single output task
+        if isinstance(task['task'], Workflow):
+            print('aaaa')
+            print(task['task'])
+            print(inputs)
+            print(task['task'](*inputs))
         results = task['task'](*inputs)
         if task['outputs'][0] != '*':
             results = {task['outputs'][0]: results}
@@ -62,11 +94,14 @@ def run_task(task, workspace):
 
 
 class Workflow(object):
-    def __init__(self, task_list=[]):
-        self.tasks = task_list
+    def __init__(self, task_list=None):
+        if task_list is None:
+            self.tasks = []
+        else:
+            self.tasks = task_list
         self.hooks = {}
 
-    def add_task(self, task, inputs=[], outputs=[]):
+    def add_task(self, task, inputs=None, outputs=None):
         """
         Adds a task to the workflow.
 
