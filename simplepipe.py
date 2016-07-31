@@ -87,7 +87,7 @@ def run_task(task, workspace):
     # Prepare input to task
     if len(task['inputs']) > 0 and task['inputs'][0] == '*':
         # Send full workspace for input type '*'
-        inputs = [data]
+        inputs = [copy.copy(data)]  # Protect against mutation
     else:
         inputs = [data[key] for key in task['inputs']]
 
@@ -97,11 +97,6 @@ def run_task(task, workspace):
         data.update(zip(task['outputs'], task['task'](*inputs)))
     else:
         # Single output task
-        if isinstance(task['task'], Workflow):
-            print('aaaa')
-            print(task['task'])
-            print(inputs)
-            print(task['task'](*inputs))
         results = task['task'](*inputs)
         if task['outputs'][0] != '*':
             results = {task['outputs'][0]: results}

@@ -83,6 +83,15 @@ def test_workflow(sum_fn, return_one_fn, two_output_fn):
     data_out2 = {'a': 1, 'b': 2, 'c': 3, 'd': 1}
     assert(p2(data_in) == data_out2)
 
+    # Test protection against mutation
+    def bad_mutator_fn(workspace):
+        workspace['a'] = 'just_messing_with_a'
+        return {'e': 'foobar'}
+
+    wf3 = simplepipe.Workflow()
+    wf3.add_task(task=bad_mutator_fn)
+    assert wf3({'a': 1, 'b': 2}) == {'a': 1, 'b': 2, 'e': 'foobar'}
+
 
 def test_hooks(sum_fn):
     """Test hooks in workflow"""
