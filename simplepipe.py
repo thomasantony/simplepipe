@@ -9,7 +9,25 @@ import functools
 
 def validate_task(original_task):
     """
-    Validates task and adds default values for missing options
+    Validates task and adds default values for missing options using the
+    following steps.
+
+    1. If there is no input list specified or if it is None, the input spec is
+       assumed to be ['*'].
+
+    2. If there are not outputs specified, or if the output spec is None or an
+       empty list, the output spec is assumed to be ['*'].
+
+    3. If the input or output spec is not iterable, they are converted into
+       single element tuples. If they are any iterable, they are converted into
+       tuples.
+
+    4. The task['task'] option must be callable.
+
+    5. If number of outputs is more than one, task['task'] must be a generator
+       function.
+
+    6. Generator functions are not supported for output spec of '*'.
 
     Returns new task with updated options
     """
@@ -19,9 +37,9 @@ def validate_task(original_task):
         task['inputs'] = ['*']
 
     # Outputs list cannot be empty
-    if ('outputs' not in task
-        or task['outputs'] is None
-        or len(task['outputs']) == 0):
+    if ('outputs' not in task or
+       task['outputs'] is None or
+       len(task['outputs']) == 0):
         task['outputs'] = ['*']
 
     # Convert to tuples (even for single values)
@@ -38,8 +56,8 @@ def validate_task(original_task):
     if not callable(task['task']):
         raise TypeError('Task function must be a callable object')
 
-    if (len(task['outputs']) > 1
-       and not inspect.isgeneratorfunction(task['task'])):
+    if (len(task['outputs']) > 1 and
+       not inspect.isgeneratorfunction(task['task'])):
         raise TypeError('Multiple outputs are only supported with \
                         generator functions')
 
@@ -49,11 +67,12 @@ def validate_task(original_task):
                              output specification "*"')
     return task
 
+
 def run_task(task, workspace):
     """
     Runs the task and updates the workspace with results.
 
-    task : dict describing task:
+    task : dict describing task
 
     Examples:
     {'task': task_func, 'inputs': ['a', 'b'], 'outputs': 'c'}

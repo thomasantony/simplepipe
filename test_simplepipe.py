@@ -4,7 +4,7 @@ import simplepipe
 
 @pytest.fixture
 def sum_fn():
-    return lambda a,b: a+b
+    return lambda a, b: a+b
 
 
 @pytest.fixture
@@ -14,6 +14,7 @@ def return_one_fn():
 
     return return_one
 
+
 @pytest.fixture
 def two_output_fn():
     # Test function with multiple outputs
@@ -22,6 +23,7 @@ def two_output_fn():
         yield 2
 
     return two_outputs
+
 
 def test_validate_task(return_one_fn, two_output_fn):
     """Test the validate_task() function"""
@@ -49,19 +51,19 @@ def test_run_task(return_one_fn, two_output_fn):
 
     # Test run task with one output
     output = simplepipe.run_task({'task': return_one_fn,
-                                 'inputs': [],
-                                 'outputs': ['a']}, {})
+                                  'inputs': [],
+                                  'outputs': ['a']}, {})
     assert output == {'a': 1}
 
     # Fails when task with '*' output doesn't return dict
     with pytest.raises(TypeError):
         simplepipe.run_task({'task': return_one_fn,
-                                  'inputs': [],
-                                  'outputs': ['*']}, {})
+                             'inputs': [],
+                             'outputs': ['*']}, {})
     # Task with two outputs
     task_five = {'task': two_output_fn,
-                'inputs': [],
-                'outputs': ['a', 'b']}
+                 'inputs': [],
+                 'outputs': ['a', 'b']}
     output = simplepipe.run_task(task_five, {})
     assert output == {'a': 1, 'b': 2}
 
@@ -76,12 +78,11 @@ def test_workflow(sum_fn, return_one_fn, two_output_fn):
 
     # Test composition of workflows
     p2 = simplepipe.Workflow()
-
     p2.add_task(p)
     p2.add_task(return_one_fn, inputs=[], outputs=['d'])
-
     data_out2 = {'a': 1, 'b': 2, 'c': 3, 'd': 1}
     assert(p2(data_in) == data_out2)
+
 
 def test_hooks(sum_fn):
     """Test hooks in workflow"""
