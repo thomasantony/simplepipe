@@ -30,103 +30,107 @@ a dict that will be used with the 'update()' method on the workspace dict.
 simplepipe makes sure that the input workspace dict is protected from mutations
 from these tasks and only updates the workspace with the returned value
 
+```python
+import simplepipe
 
-    import simplepipe
+def do_stuff_with_workspace(workspace):
+    workspace['c'] = workspace['b']*2
+    return workspace
 
-    def do_stuff_with_workspace(workspace):
-        workspace['c'] = workspace['b']*2
-        return workspace
+wf = simplepipe.Workflow()
+data_in = {'a': 1, 'b': 2}
+wf.add_task(do_stuff_with_workspace)  # '*' is default mode
+output = wf(data_in)
+print(output) # Prints {'a': 1, 'b': 2, 'c': 4}
 
-    wf = simplepipe.Workflow()
-    data_in = {'a': 1, 'b': 2}
-    wf.add_task(do_stuff_with_workspace)  # '*' is default mode
-    output = wf(data_in)
-    print(output) # Prints {'a': 1, 'b': 2, 'c': 4}
+wf2 = simplepipe.Workflow()
+wf2.add_task(wf)  # Add another workflow as a task
+wf2.add_task(task= lambda c: 5*c, inputs='c', outputs='d')
+output = wf(data_in)
+print(output) # Prints {'a': 1, 'b': 2, 'c': 4, 'd': 20}
 
-    wf2 = simplepipe.Workflow()
-    wf2.add_task(wf)  # Add another workflow as a task
-    wf2.add_task(task= lambda c: 5*c, inputs='c', outputs='d')
-    output = wf(data_in)
-    print(output) # Prints {'a': 1, 'b': 2, 'c': 4, 'd': 20}
+# Protection against mutator functions
+def bad_mutator_fn(workspace):
+    workspace['a'] = 'just_messing_with_a'
+    return {'e': 'foobar'}
 
-    # Protection against mutator functions
-    def bad_mutator_fn(workspace):
-        workspace['a'] = 'just_messing_with_a'
-        return {'e': 'foobar'}
-
-    wf3 = simplepipe.Workflow()
-    wf3.add_task(task=bad_mutator_fn)
-    output = wf(data_in)
-    print(output) # Prints {'a': 1, 'b': 2, 'e': 'foobar'}
-
+wf3 = simplepipe.Workflow()
+wf3.add_task(task=bad_mutator_fn)
+output = wf(data_in)
+print(output) # Prints {'a': 1, 'b': 2, 'e': 'foobar'}
+```
 
 ## Single output functions
 
-    import simplepipe
+```python
+import simplepipe
 
-    def sum(a, b):
-        return a+b
+def sum(a, b):
+    return a+b
 
-    def twice(x):
-        return 2*x
+def twice(x):
+    return 2*x
 
-    wf = simplepipe.Workflow()
-    data_in = {'a': 1, 'b': 2}
-    wf.add_task(sum, inputs=['a', 'b'], outputs=['c']) \
-      .add_task(twice, inputs=['c'], outputs=['d'])
-    output = wf(data_in)
-    print(output) # Prints {'a': 1, 'b': 2, 'c': 3, 'd': 6}
+wf = simplepipe.Workflow()
+data_in = {'a': 1, 'b': 2}
+wf.add_task(sum, inputs=['a', 'b'], outputs=['c']) \
+  .add_task(twice, inputs=['c'], outputs=['d'])
+output = wf(data_in)
+print(output) # Prints {'a': 1, 'b': 2, 'c': 3, 'd': 6}
+```
 
 ## Multi-output functions
 
 Functions returning multiple values must use the `yield` keyword to return them
 separately, one at a time.
 
+```python
+import simplepipe
 
-    import simplepipe
+def sum_and_product(a, b):
+    yield a+b
+    yield a*b
 
-    def sum_and_product(a, b):
-        yield a+b
-        yield a*b
-
-    wf = simplepipe.Workflow()
-    data_in = {'a': 1, 'b': 2}
-    wf.add_task(sum_and_product, inputs=['a', 'b'], outputs=['c', 'd'])
-    output = wf(data_in)
-    print(output) # Prints {'a': 1, 'b': 2, 'c': 3, 'd': 2}
+wf = simplepipe.Workflow()
+data_in = {'a': 1, 'b': 2}
+wf.add_task(sum_and_product, inputs=['a', 'b'], outputs=['c', 'd'])
+output = wf(data_in)
+print(output) # Prints {'a': 1, 'b': 2, 'c': 3, 'd': 2}
+```
 
 ## Hooks
 **simplepipe** also supports hooks that allow customization of the workflow after it has been created. Hook points are defined using the `add_hook_point` method. Any number of hook functions can be bound to the hook points in the work flow. Multiple hooks added at the same hook point will be executed in the order that they were added.
 
 *Note: Hook functions are not pure functions and are supposed to mutate the output workspace. They do not return anything.*
 
+```python
+import simplepipe
 
-    import simplepipe
+def sum(a, b):
+    return a+b
 
-    def sum(a, b):
-        return a+b
+def twice(x):
+    return 2*x
 
-    def twice(x):
-        return 2*x
+def do_after_sum(workspace):
+    workspace['c'] = workspace['c']*10
 
-    def do_after_sum(workspace):
-        workspace['c'] = workspace['c']*10
-
-    def do_after_twice(workspace):
-        workspace['e'] = 31337
+def do_after_twice(workspace):
+    workspace['e'] = 31337
 
 
-    wf = simplepipe.Workflow()
-    data_in = {'a': 1, 'b': 2}
-    wf.add_task(sum, inputs=['a', 'b'], outputs=['c'])
-    wf.add_hook_point('after_sum')
-    wf.add_task(twice, inputs=['c'], outputs=['d'])
-    wf.add_hook_point('after_twice')
+wf = simplepipe.Workflow()
+data_in = {'a': 1, 'b': 2}
+wf.add_task(sum, inputs=['a', 'b'], outputs=['c'])
+wf.add_hook_point('after_sum')
+wf.add_task(twice, inputs=['c'], outputs=['d'])
+wf.add_hook_point('after_twice')
 
-    # Hook functions can be inserted any time before the workflow is executed
-    wf.add_hook('after_sum', do_after_sum)
-    wf.add_hook('after_twice', do_after_twice)
+# Hook functions can be inserted any time before the workflow is executed
+wf.add_hook('after_sum', do_after_sum)
+wf.add_hook('after_twice', do_after_twice)
 
-    output = wf(data_in)
-    print(output)
-    # {'a': 1, 'b': 2, 'c': 30, 'd': 60, 'e': 31337}
+output = wf(data_in)
+print(output)
+# {'a': 1, 'b': 2, 'c': 30, 'd': 60, 'e': 31337}
+```
