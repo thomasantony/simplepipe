@@ -134,3 +134,6 @@ output = wf(data_in)
 print(output)
 # {'a': 1, 'b': 2, 'c': 30, 'd': 60, 'e': 31337}
 ```
+
+#About the Author
+[Thomas Antony's LinkedIn Profile](https://www.linkedin.com/in/thomasantony)
