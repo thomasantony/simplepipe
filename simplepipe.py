@@ -5,8 +5,9 @@ Created on 24 July 2016
 import copy
 import inspect
 import functools
+import collections
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
 
 def validate_task(original_task):
     """
@@ -23,16 +24,16 @@ def validate_task(original_task):
        single element tuples. If they are any iterable, they are converted into
        tuples.
 
-    4. The task['task'] option must be callable.
+    4. The task['fn'] option must be callable.
 
-    5. If number of outputs is more than one, task['task'] must be a generator
+    5. If number of outputs is more than one, task['fn'] must be a generator
        function.
 
     6. Generator functions are not supported for output spec of '*'.
 
     Returns new task with updated options
     """
-    task = copy.copy(original_task)
+    task = original_task._asdict()
     # Default values for inputs and outputs
     if 'inputs' not in task or task['inputs'] is None:
         task['inputs'] = ['*']
@@ -54,19 +55,19 @@ def validate_task(original_task):
     else:
         task['outputs'] = tuple(task['outputs'])
 
-    if not callable(task['task']):
+    if not callable(task['fn']):
         raise TypeError('Task function must be a callable object')
 
     if (len(task['outputs']) > 1 and
-       not inspect.isgeneratorfunction(task['task'])):
+       not inspect.isgeneratorfunction(task['fn'])):
         raise TypeError('Multiple outputs are only supported with \
                         generator functions')
 
-    if inspect.isgeneratorfunction(task['task']):
+    if inspect.isgeneratorfunction(task['fn']):
         if task['outputs'][0] == '*':
             raise TypeError('Generator functions cannot be used for tasks with \
                              output specification "*"')
-    return task
+    return Task(**task)
 
 
 def run_task(task, workspace):
@@ -86,27 +87,28 @@ def run_task(task, workspace):
     task = validate_task(task)
 
     # Prepare input to task
-    if len(task['inputs']) > 0 and task['inputs'][0] == '*':
+    if len(task.inputs) > 0 and task.inputs[0] == '*':
         # Send full workspace for input type '*'
         inputs = [copy.copy(data)]  # Protect against mutation
     else:
-        inputs = [data[key] for key in task['inputs']]
+        inputs = [data[key] for key in task.inputs]
 
-    if inspect.isgeneratorfunction(task['task']):
+    if inspect.isgeneratorfunction(task.fn):
         # Multiple output task
         # Assuming number of outputs are equal to number of return values
-        data.update(zip(task['outputs'], task['task'](*inputs)))
+        data.update(zip(task.outputs, task.fn(*inputs)))
     else:
         # Single output task
-        results = task['task'](*inputs)
-        if task['outputs'][0] != '*':
-            results = {task['outputs'][0]: results}
+        results = task.fn(*inputs)
+        if task.outputs[0] != '*':
+            results = {task.outputs[0]: results}
         elif not isinstance(results, dict):
             raise TypeError('Result should be a dict for output type *')
         data.update(results)
 
     return data
 
+Task = collections.namedtuple('Task', ['fn', 'inputs', 'outputs'])
 
 class Workflow(object):
     def __init__(self, task_list=None):
@@ -116,13 +118,14 @@ class Workflow(object):
             self.tasks = task_list
         self.hooks = {}
 
-    def add_task(self, task, inputs=None, outputs=None):
+    def add_task(self, fn, inputs=None, outputs=None):
         """
         Adds a task to the workflow.
 
         Returns self to facilitate chaining method calls
         """
-        self.tasks.append({'task': task, 'inputs': inputs, 'outputs': outputs})
+        # self.tasks.append({'task': task, 'inputs': inputs, 'outputs': outputs})
+        self.tasks.append(Task(fn, inputs, outputs))
         return self
 
     def add_hook_point(self, name):
@@ -132,9 +135,10 @@ class Workflow(object):
         Implemented as a special type of task that takes full workspace as its
         input and returns a modified workspace
         """
-        self.tasks.append({'task': functools.partial(self.run_hook, name),
-                           'inputs': '*',
-                           'outputs': '*'})
+
+        self.tasks.append(Task(fn=functools.partial(self.run_hook, name),
+                           inputs='*',
+                           outputs='*'))
         return self
 
     def add_hook(self, name, function):

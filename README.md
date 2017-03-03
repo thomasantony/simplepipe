@@ -45,7 +45,7 @@ print(output) # Prints {'a': 1, 'b': 2, 'c': 4}
 
 wf2 = simplepipe.Workflow()
 wf2.add_task(wf)  # Add another workflow as a task
-wf2.add_task(task= lambda c: 5*c, inputs='c', outputs='d')
+wf2.add_task(fn= lambda c: 5*c, inputs='c', outputs='d')
 output = wf(data_in)
 print(output) # Prints {'a': 1, 'b': 2, 'c': 4, 'd': 20}
 
@@ -55,7 +55,7 @@ def bad_mutator_fn(workspace):
     return {'e': 'foobar'}
 
 wf3 = simplepipe.Workflow()
-wf3.add_task(task=bad_mutator_fn)
+wf3.add_task(fn=bad_mutator_fn)
 output = wf(data_in)
 print(output) # Prints {'a': 1, 'b': 2, 'e': 'foobar'}
 ```
