@@ -7,7 +7,7 @@ import inspect
 import functools
 import collections
 
-__version__ = '0.0.4'
+__version__ = '0.0.4.1'
 
 def validate_task(original_task):
     """
@@ -45,12 +45,12 @@ def validate_task(original_task):
         task['outputs'] = ['*']
 
     # Convert to tuples (even for single values)
-    if not hasattr(task['inputs'], '__iter__'):
+    if not hasattr(task['inputs'], '__iter__') or isinstance(task['inputs'], str):
         task['inputs'] = (task['inputs'],)
     else:
         task['inputs'] = tuple(task['inputs'])
 
-    if not hasattr(task['outputs'], '__iter__'):
+    if not hasattr(task['outputs'], '__iter__') or isinstance(task['outputs'], str):
         task['outputs'] = (task['outputs'],)
     else:
         task['outputs'] = tuple(task['outputs'])

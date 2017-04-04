@@ -6,6 +6,9 @@ import simplepipe
 def sum_fn():
     return lambda a, b: a+b
 
+@pytest.fixture
+def doubler_fn():
+    return lambda a: 2*a
 
 @pytest.fixture
 def return_one_fn():
@@ -52,7 +55,7 @@ def test_validate_task(return_one_fn, two_output_fn):
                                   outputs = ['*']), {})
 
 
-def test_run_task(return_one_fn, two_output_fn, mixed_input_fn):
+def test_run_task(return_one_fn, two_output_fn, mixed_input_fn, doubler_fn):
     """Test the run_task() function"""
 
     # Test run task with one output
@@ -80,20 +83,26 @@ def test_run_task(return_one_fn, two_output_fn, mixed_input_fn):
     output = simplepipe.run_task(task_six, {'x': 2, 'a': 3})
     assert output == {'x': 2, 'a': 3, 'b': 6}
 
+    task_seven = simplepipe.Task(fn=doubler_fn,
+                                inputs='first',
+                                outputs='second')
+    output = simplepipe.run_task(task_seven, {'first':1})
+    assert output == {'first':1, 'second':2}
+
 
 def test_workflow(sum_fn, return_one_fn, two_output_fn):
     """Test the Workflow class"""
     p = simplepipe.Workflow()
-    data_in = {'a': 1, 'b': 2}
-    data_out = {'a': 1, 'b': 2, 'c': 3}
-    p.add_task(sum_fn, inputs =['a', 'b'], outputs =['c'])
+    data_in = {'first': 1, 'second': 2}
+    data_out = {'first': 1, 'second': 2, 'c': 3}
+    p.add_task(sum_fn, inputs =['first', 'second'], outputs =['c'])
     assert(p(data_in) == data_out)
 
     # Test composition of workflows
     p2 = simplepipe.Workflow()
     p2.add_task(p)
     p2.add_task(return_one_fn, inputs =[], outputs =['d'])
-    data_out2 = {'a': 1, 'b': 2, 'c': 3, 'd': 1}
+    data_out2 = {'first': 1, 'second': 2, 'c': 3, 'd': 1}
     assert(p2(data_in) == data_out2)
 
     # Test protection against mutation
