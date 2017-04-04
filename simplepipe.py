@@ -7,7 +7,7 @@ import inspect
 import functools
 import collections
 
-__version__ = '0.0.3'
+__version__ = '0.0.4'
 
 def validate_task(original_task):
     """
@@ -70,6 +70,13 @@ def validate_task(original_task):
     return Task(**task)
 
 
+def input_parser(key, data):
+    """Used to pass in full workspace if an input is defined as '*'"""
+    if key == '*':
+        return copy.copy(data)
+    else:
+        return data[key]
+
 def run_task(task, workspace):
     """
     Runs the task and updates the workspace with results.
@@ -79,6 +86,7 @@ def run_task(task, workspace):
     Examples:
     {'task': task_func, 'inputs': ['a', 'b'], 'outputs': 'c'}
     {'task': task_func, 'inputs': '*', 'outputs': '*'}
+    {'task': task_func, 'inputs': ['*','a'], 'outputs': 'b'}
 
     Returns a new workspace with results
     """
@@ -87,11 +95,7 @@ def run_task(task, workspace):
     task = validate_task(task)
 
     # Prepare input to task
-    if len(task.inputs) > 0 and task.inputs[0] == '*':
-        # Send full workspace for input type '*'
-        inputs = [copy.copy(data)]  # Protect against mutation
-    else:
-        inputs = [data[key] for key in task.inputs]
+    inputs = [input_parser(key, data) for key in task.inputs]
 
     if inspect.isgeneratorfunction(task.fn):
         # Multiple output task
@@ -111,12 +115,13 @@ def run_task(task, workspace):
 Task = collections.namedtuple('Task', ['fn', 'inputs', 'outputs'])
 
 class Workflow(object):
-    def __init__(self, task_list=None):
+    def __init__(self, task_list=None, description='simplepipe Workflow'):
         if task_list is None:
             self.tasks = []
         else:
             self.tasks = task_list
         self.hooks = {}
+        self.__doc__ = description
 
     def add_task(self, fn, inputs=None, outputs=None):
         """
