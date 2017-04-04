@@ -7,7 +7,7 @@ import inspect
 import functools
 import collections
 
-__version__ = '0.0.4.1'
+__version__ = '0.0.5'
 
 def validate_task(original_task):
     """
