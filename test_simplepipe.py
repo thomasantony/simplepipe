@@ -24,6 +24,12 @@ def two_output_fn():
 
     return two_outputs
 
+@pytest.fixture
+def mixed_input_fn():
+    def mixed_inputs(workspace, a):
+        return workspace['x'] * a
+    return mixed_inputs
+
 
 def test_validate_task(return_one_fn, two_output_fn):
     """Test the validate_task() function"""
@@ -46,7 +52,7 @@ def test_validate_task(return_one_fn, two_output_fn):
                                   outputs = ['*']), {})
 
 
-def test_run_task(return_one_fn, two_output_fn):
+def test_run_task(return_one_fn, two_output_fn, mixed_input_fn):
     """Test the run_task() function"""
 
     # Test run task with one output
@@ -66,6 +72,13 @@ def test_run_task(return_one_fn, two_output_fn):
                  outputs = ['a', 'b'])
     output = simplepipe.run_task(task_five, {})
     assert output == {'a': 1, 'b': 2}
+
+    # Task with mixed inputs (workspace + normal)
+    task_six = simplepipe.Task(fn = mixed_input_fn,
+                                inputs=['*', 'a'],
+                                outputs='b')
+    output = simplepipe.run_task(task_six, {'x': 2, 'a': 3})
+    assert output == {'x': 2, 'a': 3, 'b': 6}
 
 
 def test_workflow(sum_fn, return_one_fn, two_output_fn):
