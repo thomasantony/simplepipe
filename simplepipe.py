@@ -7,7 +7,7 @@ import inspect
 import functools
 import collections
 
-__version__ = '0.0.5.2'
+__version__ = '0.0.5.3'
 
 
 def validate_task(original_task):
@@ -133,11 +133,9 @@ def run_hook(name, workspace, hooks):
     hooks - dict of lists
         Mapping with hook names and callback functions
     """
-    if name not in hooks:
-        raise KeyError('Hook ' + name + ' not found')
 
     data = copy.copy(workspace)
-    for hook_listener in hooks[name]:
+    for hook_listener in hooks.get(name, []):
         # Hook functions may mutate the data and returns nothing
         hook_listener(data)
     return data
