@@ -7,7 +7,8 @@ import inspect
 import functools
 import collections
 
-__version__ = '0.0.5'
+__version__ = '0.0.5.2'
+
 
 def validate_task(original_task):
     """
@@ -34,14 +35,15 @@ def validate_task(original_task):
     Returns new task with updated options
     """
     task = original_task._asdict()
+
     # Default values for inputs and outputs
     if 'inputs' not in task or task['inputs'] is None:
         task['inputs'] = ['*']
 
     # Outputs list cannot be empty
     if ('outputs' not in task or
-       task['outputs'] is None or
-       len(task['outputs']) == 0):
+        task['outputs'] is None or
+            len(task['outputs']) == 0):
         task['outputs'] = ['*']
 
     # Convert to tuples (even for single values)
@@ -59,7 +61,7 @@ def validate_task(original_task):
         raise TypeError('Task function must be a callable object')
 
     if (len(task['outputs']) > 1 and
-       not inspect.isgeneratorfunction(task['fn'])):
+            not inspect.isgeneratorfunction(task['fn'])):
         raise TypeError('Multiple outputs are only supported with \
                         generator functions')
 
@@ -77,11 +79,15 @@ def input_parser(key, data):
     else:
         return data[key]
 
+
 def run_task(task, workspace):
     """
     Runs the task and updates the workspace with results.
 
-    task : dict describing task
+    Parameters
+    ----------
+    task - dict
+        Task Description
 
     Examples:
     {'task': task_func, 'inputs': ['a', 'b'], 'outputs': 'c'}
@@ -112,9 +118,37 @@ def run_task(task, workspace):
 
     return data
 
+
+def run_hook(name, workspace, hooks):
+    """Runs all hooks added under the give name.
+
+    Parameters
+    ----------
+    name - str
+        Name of the hook to invoke
+
+    workspace - dict
+        Workspace that the hook functions operate on
+
+    hooks - dict of lists
+        Mapping with hook names and callback functions
+    """
+    if name not in hooks:
+        raise KeyError('Hook ' + name + ' not found')
+
+    data = copy.copy(workspace)
+    for hook_listener in hooks[name]:
+        # Hook functions may mutate the data and returns nothing
+        hook_listener(data)
+    return data
+
+
 Task = collections.namedtuple('Task', ['fn', 'inputs', 'outputs'])
+Hook = str  # For now
+
 
 class Workflow(object):
+
     def __init__(self, task_list=None, description='simplepipe Workflow'):
         if task_list is None:
             self.tasks = []
@@ -135,15 +169,13 @@ class Workflow(object):
 
     def add_hook_point(self, name):
         """
-        Creates a point in the workflow where hook functions can be added.
+        Adds a point in the workflow where hook functions can be added.
 
         Implemented as a special type of task that takes full workspace as its
         input and returns a modified workspace
         """
 
-        self.tasks.append(Task(fn=functools.partial(self.run_hook, name),
-                           inputs='*',
-                           outputs='*'))
+        self.tasks.append(Hook(name))
         return self
 
     def add_hook(self, name, function):
@@ -164,27 +196,24 @@ class Workflow(object):
         self.hooks[name].append(function)
         return self
 
-    def run_hook(self, name, workspace):
-        """Runs all hooks added under the give name."""
-        if name not in self.hooks:
-            raise KeyError('Hook '+name+' not found')
-
-        data = copy.copy(workspace)
-        for hook_listener in self.hooks[name]:
-            # Hook functions may mutate the data and returns nothing
-            hook_listener(data)
-        return data
-
     def __call__(self, workspace={}):
         """
         Executes all the queued tasks in order and returns
         new workspace with results
         """
         result = workspace
-        for task in self.tasks:
-            result = run_task(task, result)
+        for i, task in enumerate(self.tasks):
+            # Check if task is a hook point
+            if isinstance(task, Hook):
+                result = run_hook(task, result, self.hooks)
+                continue
+            try:
+                result = run_task(task, result)
+            except Exception:
+                print('Validation failed on task number %d' % i)
+                raise
         return result
 
     def __repr__(self):
         return '<%s with %d tasks>' \
-                % (self.__class__.__name__, len(self.tasks))
+            % (self.__class__.__name__, len(self.tasks))
